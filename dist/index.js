@@ -252,7 +252,7 @@ const sortReleases = (releases) => {
 
 module.exports.findReleases = async ({ ref, context, octokit, config }) => {
     let releases = await octokit.paginate(
-        octokit.repos.listReleases.endpoint.merge(
+        octokit.rest.listReleases.endpoint.merge(
             context.repo({
                 per_page: 100,
             })
