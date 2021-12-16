@@ -1,0 +1,37 @@
+name: 'Generate release notes'
+description: 'Drafts your release notes as pull requests are merged into master.'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
+branding:
+  icon: edit-2
+  color: orange
+inputs:
+  template:
+    description: Template used to generate notes.
+    required: true
+  change-template:
+    description: change template
+    required: false
+  category-template:
+    description: category template
+    required: false
+  no-changes-template:
+    description: no changes template
+    required: false
+  sort-by:
+    description: pull request sort by
+    required: false
+  sort-direction:
+    description: pull request sort direction
+    required: false
+  filter-by-commitish:
+    description: filter by commitish
+    required: false
+  categories:
+    description: Used to display PR classification
+    required: false
+    default: '[]'
+outputs:
+  body:
+    description: The body of the drafted release.
