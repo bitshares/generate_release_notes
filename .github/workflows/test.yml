@@ -28,9 +28,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: ./
+      id: create_release_notes
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        template: ' $CHANGES '
+        template: 'a $CHANGES a'
         categories: |
           [{
             "title": "New features",
@@ -39,3 +40,5 @@ jobs:
             "title": "Bug fixes and improvements",
             "labels": ["bug"]
           }]
+    - run: |
+        echo "body: ${{steps.create_release_notes.outputs.body}}"

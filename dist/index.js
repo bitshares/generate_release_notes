@@ -41140,7 +41140,6 @@ async function run() {
         let body = generateBody({ config, commits, lastRelease, mergedPullRequests: sortedMergedPullRequests })
         core.setOutput('body', body);
     } catch (error) {
-        console.log(error)
         core.setFailed(error.message);
     }
 }
