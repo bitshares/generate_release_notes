@@ -45,6 +45,7 @@ async function run() {
     try {
         const context = github.context
         const octokit = github.getOctokit(GITHUB_TOKEN)
+        console.log(octokit.rest)
         const config = getConfig({ context })
         if (config === null) return
         // GitHub Actions merge payloads slightly differ, in that their ref points

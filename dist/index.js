@@ -252,7 +252,7 @@ const sortReleases = (releases) => {
 
 module.exports.findReleases = async ({ ref, context, octokit, config }) => {
     let releases = await octokit.paginate(
-        octokit.rest.listReleases.endpoint.merge(
+        octokit.rest.repos.listReleases.endpoint.merge(
             context.repo({
                 per_page: 100,
             })
@@ -41104,6 +41104,7 @@ async function run() {
     try {
         const context = github.context
         const octokit = github.getOctokit(GITHUB_TOKEN)
+        console.log(octokit.rest)
         const config = getConfig({ context })
         if (config === null) return
         // GitHub Actions merge payloads slightly differ, in that their ref points
