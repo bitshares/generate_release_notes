@@ -18,18 +18,16 @@ const { runnerIsActions } = __nccwpck_require__(918)
 const { validateSchema } = __nccwpck_require__(5171)
 const { findCommitsWithAssociatedPullRequests } = __nccwpck_require__(3916)
 const { sortPullRequests } = __nccwpck_require__(6445)
-const { generateChangeLog, generateBody } = __nccwpck_require__(5715)
+const { findReleases, generateBody } = __nccwpck_require__(5715)
 
 function getConfig() {
-    var config = {}
+    var config = { template: "" }
     if (core.getInput('template') !== "")
         config.template = core.getInput('template')
     if (core.getInput('categories') !== "")
         config.categories = parseCategories()
     if (core.getInput('filter-by-commitish') !== "")
         config.filterByCommitish = core.getInput('filter-by-commitish')
-    if (core.getInput('commitish') !== "")
-        config['commitish'] = core.getInput('commitish')
     if (core.getInput('change-template') !== "")
         config['change-template'] = core.getInput('change-template')
     if (core.getInput('category-template') !== "")
@@ -88,9 +86,9 @@ async function run() {
         )
 
         let body = generateBody({ config, lastRelease, mergedPullRequests: sortedMergedPullRequests })
-        console.log(body)
         core.setOutput('body', body);
     } catch (error) {
+        console.log(error)
         core.setFailed(error.message);
     }
 }
@@ -233,7 +231,7 @@ module.exports.findCommitsWithAssociatedPullRequests = async ({
 const { SORT_BY, SORT_DIRECTIONS } = __nccwpck_require__(6445)
 
 const DEFAULT_CONFIG = Object.freeze({
-    'template': '',
+    'template': ' $CHANGES ',
     'change-template': `* $TITLE (#$NUMBER) @$AUTHOR`,
     'category-template': `## $TITLE`,
     categories: [],
@@ -358,8 +356,7 @@ module.exports.findReleases = async ({ ref, context, config }) => {
         filteredReleases.filter((r) => !r.draft)
     )
     const draftRelease = filteredReleases.find((r) => r.draft)
-    const lastRelease =
-        sortedPublishedReleases[sortedPublishedReleases.length - 1]
+    const lastRelease = sortedPublishedReleases[sortedPublishedReleases.length - 1]
 
     if (draftRelease) {
         log({ context, message: `Draft release: ${draftRelease.tag_name}` })
@@ -496,7 +493,9 @@ const { SORT_BY, SORT_DIRECTIONS } = __nccwpck_require__(6445)
 const schema = () => {
     return Joi.object().keys(
         {
-            template: Joi.string().required(),
+            template: Joi.string().allow('').default(
+                DEFAULT_CONFIG['template']
+            ),
 
             'category-template': Joi.string()
                 .allow('')
@@ -545,7 +544,6 @@ const validateSchema = (repoConfig) => {
         abortEarly: false,
         allowUnknown: true,
     })
-
     if (error) throw error
     return config
 }
