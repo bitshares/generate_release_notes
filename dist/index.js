@@ -238,7 +238,7 @@ module.exports = paginate
 
 const compareVersions = __nccwpck_require__(9296)
 const log = __nccwpck_require__(3817)
-const template = __nccwpck_require__(5032)
+const { template } = __nccwpck_require__(5032)
 
 const sortReleases = (releases) => {
     // For semver, we find the greatest release number
@@ -255,7 +255,7 @@ const sortReleases = (releases) => {
 module.exports.findReleases = async ({ ref, context, octokit, config }) => {
     let releases = await octokit.paginate(
         octokit.rest.repos.listReleases.endpoint.merge(
-            Object.assign({}, context.repo, { per_page: 100})
+            Object.assign({}, context.repo, { per_page: 100 })
             // context.repo({
             //     per_page: 100,
             // })
