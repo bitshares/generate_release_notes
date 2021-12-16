@@ -9,94 +9,6 @@ module.exports = JSON.parse('{"name":"@hapi/joi","description":"Object schema va
 
 /***/ }),
 
-/***/ 2932:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const core = __nccwpck_require__(2186)
-const github = __nccwpck_require__(5438);
-const { runnerIsActions } = __nccwpck_require__(918)
-const { validateSchema } = __nccwpck_require__(5171)
-const { findCommitsWithAssociatedPullRequests } = __nccwpck_require__(3916)
-const { sortPullRequests } = __nccwpck_require__(6445)
-const { findReleases, generateBody } = __nccwpck_require__(5715)
-
-function getConfig() {
-    var config = { template: "" }
-    if (core.getInput('template') !== "")
-        config.template = core.getInput('template')
-    if (core.getInput('categories') !== "")
-        config.categories = parseCategories()
-    if (core.getInput('filter-by-commitish') !== "")
-        config.filterByCommitish = core.getInput('filter-by-commitish')
-    if (core.getInput('change-template') !== "")
-        config['change-template'] = core.getInput('change-template')
-    if (core.getInput('category-template') !== "")
-        config['category-template'] = core.getInput('category-template')
-    if (core.getInput('sort-by') !== "")
-        config['sort-by'] = core.getInput('sort-by')
-    if (core.getInput('sort-direction') !== "")
-        config['sort-direction'] = core.getInput('sort-direction')
-    if (core.getInput('no-changes-template') !== "")
-        config['no-changes-template'] = core.getInput('no-changes-template')
-
-    return validateSchema(config)
-}
-
-function parseCategories() {
-    try {
-        return JSON.parse(core.getInput('categories'))
-    } catch (error) {
-        log({ context, error, message: 'Invalid config file' })
-
-        if (runnerIsActions()) {
-            core.setFailed('Invalid config file')
-        }
-        return null
-    }
-}
-
-async function run() {
-    try {
-        const context = github.context
-        const config = getConfig()
-        if (config === null) return
-        // GitHub Actions merge payloads slightly differ, in that their ref points
-        // to the PR branch instead of refs/heads/master
-        const ref = process.env['GITHUB_REF'] || context.payload.ref
-
-        const { draftRelease, lastRelease } = await findReleases({
-            ref,
-            context,
-            config,
-        })
-        const {
-            commits,
-            pullRequests: mergedPullRequests,
-        } = await findCommitsWithAssociatedPullRequests({
-            context,
-            ref,
-            lastRelease,
-            config,
-        })
-
-        const sortedMergedPullRequests = sortPullRequests(
-            mergedPullRequests,
-            config['sort-by'],
-            config['sort-direction']
-        )
-
-        let body = generateBody({ config, lastRelease, mergedPullRequests: sortedMergedPullRequests })
-        core.setOutput('body', body);
-    } catch (error) {
-        console.log(error)
-        core.setFailed(error.message);
-    }
-}
-
-run();
-
-/***/ }),
-
 /***/ 3916:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -40963,14 +40875,6 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 3474:
-/***/ ((module) => {
-
-module.exports = eval("require")("@probot/adapter-github-actions");
-
-
-/***/ }),
-
 /***/ 2877:
 /***/ ((module) => {
 
@@ -41153,12 +41057,87 @@ var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
 const core = __nccwpck_require__(2186)
-const { run } = __nccwpck_require__(3474)
-const app = __nccwpck_require__(2932)
+const github = __nccwpck_require__(5438);
+const { runnerIsActions } = __nccwpck_require__(918)
+const { validateSchema } = __nccwpck_require__(5171)
+const { findCommitsWithAssociatedPullRequests } = __nccwpck_require__(3916)
+const { sortPullRequests } = __nccwpck_require__(6445)
+const { findReleases, generateBody } = __nccwpck_require__(5715)
 
-run(app).catch((err) => {
-    core.setFailed(`💥 Generate release notes failed with error: ${err.message}`)
-})
+function getConfig() {
+    var config = { template: "" }
+    if (core.getInput('template') !== "")
+        config.template = core.getInput('template')
+    if (core.getInput('categories') !== "")
+        config.categories = parseCategories()
+    if (core.getInput('filter-by-commitish') !== "")
+        config.filterByCommitish = core.getInput('filter-by-commitish')
+    if (core.getInput('change-template') !== "")
+        config['change-template'] = core.getInput('change-template')
+    if (core.getInput('category-template') !== "")
+        config['category-template'] = core.getInput('category-template')
+    if (core.getInput('sort-by') !== "")
+        config['sort-by'] = core.getInput('sort-by')
+    if (core.getInput('sort-direction') !== "")
+        config['sort-direction'] = core.getInput('sort-direction')
+    if (core.getInput('no-changes-template') !== "")
+        config['no-changes-template'] = core.getInput('no-changes-template')
+
+    return validateSchema(config)
+}
+
+function parseCategories() {
+    try {
+        return JSON.parse(core.getInput('categories'))
+    } catch (error) {
+        log({ context, error, message: 'Invalid config file' })
+
+        if (runnerIsActions()) {
+            core.setFailed('Invalid config file')
+        }
+        return null
+    }
+}
+
+async function run() {
+    try {
+        const context = github.context
+        const config = getConfig()
+        if (config === null) return
+        // GitHub Actions merge payloads slightly differ, in that their ref points
+        // to the PR branch instead of refs/heads/master
+        const ref = process.env['GITHUB_REF'] || context.payload.ref
+
+        const { draftRelease, lastRelease } = await findReleases({
+            ref,
+            context,
+            config,
+        })
+        const {
+            commits,
+            pullRequests: mergedPullRequests,
+        } = await findCommitsWithAssociatedPullRequests({
+            context,
+            ref,
+            lastRelease,
+            config,
+        })
+
+        const sortedMergedPullRequests = sortPullRequests(
+            mergedPullRequests,
+            config['sort-by'],
+            config['sort-direction']
+        )
+
+        let body = generateBody({ config, lastRelease, mergedPullRequests: sortedMergedPullRequests })
+        core.setOutput('body', body);
+    } catch (error) {
+        console.log(error)
+        core.setFailed(error.message);
+    }
+}
+
+run();
 })();
 
 module.exports = __webpack_exports__;

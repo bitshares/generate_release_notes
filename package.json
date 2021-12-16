@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "lint": "eslint .",
-    "build": "ncc build action.js",
+    "build": "ncc build index.js",
     "start": "probot run ./index.js",
     "prepare": "ncc build index.js -o dist --source-map",
     "test": "jest"
