@@ -379,6 +379,7 @@ module.exports.generateBody = ({
     config,
     lastRelease,
     mergedPullRequests,
+    commits
 }) => {
     let body = config.template
     body = template(
@@ -41107,7 +41108,6 @@ async function run() {
     try {
         const context = github.context
         const octokit = github.getOctokit(GITHUB_TOKEN)
-        console.log(context)
         const config = getConfig({ context })
         if (config === null) return
         // GitHub Actions merge payloads slightly differ, in that their ref points
@@ -41137,7 +41137,7 @@ async function run() {
             config['sort-direction']
         )
 
-        let body = generateBody({ config, lastRelease, mergedPullRequests: sortedMergedPullRequests })
+        let body = generateBody({ config, commits, lastRelease, mergedPullRequests: sortedMergedPullRequests })
         core.setOutput('body', body);
     } catch (error) {
         console.log(error)
