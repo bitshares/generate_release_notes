@@ -41102,6 +41102,7 @@ function parseCategories() {
 async function run() {
     try {
         const context = github.context
+        console.log(context.octokit)
         const config = getConfig()
         if (config === null) return
         // GitHub Actions merge payloads slightly differ, in that their ref points
