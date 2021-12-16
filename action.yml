@@ -7,9 +7,12 @@ branding:
   icon: edit-2
   color: orange
 inputs:
+  GITHUB_TOKEN: 
+    description: The YML workflow will need to set myToken with the GitHub Secret Token.
+    required: true
   template:
     description: Template used to generate notes.
-    required: true
+    required: false
   change-template:
     description: change template
     required: false

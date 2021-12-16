@@ -79,60 +79,61 @@ module.exports.findCommitsWithAssociatedPullRequestsQuery = /* GraphQL */ `
 `
 
 module.exports.findCommitsWithAssociatedPullRequests = async ({
-    context,
-    ref,
-    lastRelease,
-    config,
+  context,
+  octokit,
+  ref,
+  lastRelease,
+  config,
 }) => {
-    const { owner, repo } = context.repo()
-    const variables = {
-        name: repo,
-        owner,
-        ref,
-        withPullRequestBody: config['change-template'].includes('$BODY'),
-        withPullRequestURL: config['change-template'].includes('$URL'),
-        withBaseRefName: config['change-template'].includes('$BASE_REF_NAME'),
-        withHeadRefName: config['change-template'].includes('$HEAD_REF_NAME'),
-    }
-    const dataPath = ['repository', 'object', 'history']
-    const repoNameWithOwner = `${owner}/${repo}`
+  const { owner, repo } = context.repo()
+  const variables = {
+    name: repo,
+    owner,
+    ref,
+    withPullRequestBody: config['change-template'].includes('$BODY'),
+    withPullRequestURL: config['change-template'].includes('$URL'),
+    withBaseRefName: config['change-template'].includes('$BASE_REF_NAME'),
+    withHeadRefName: config['change-template'].includes('$HEAD_REF_NAME'),
+  }
+  const dataPath = ['repository', 'object', 'history']
+  const repoNameWithOwner = `${owner}/${repo}`
 
-    let data, commits
-    if (lastRelease) {
-        log({
-            context,
-            message: `Fetching all commits for reference ${ref} since ${lastRelease.created_at}`,
-        })
+  let data, commits
+  if (lastRelease) {
+    log({
+      context,
+      message: `Fetching all commits for reference ${ref} since ${lastRelease.created_at}`,
+    })
 
-        data = await paginate(
-            context.octokit.graphql,
-            module.exports.findCommitsWithAssociatedPullRequestsQuery,
-            { ...variables, since: lastRelease.created_at },
-            dataPath
-        )
-        // GraphQL call is inclusive of commits from the specified dates.  This means the final
-        // commit from the last tag is included, so we remove this here.
-        commits = _.get(data, [...dataPath, 'nodes']).filter(
-            (commit) => commit.committedDate != lastRelease.created_at
-        )
-    } else {
-        log({ context, message: `Fetching all commits for reference ${ref}` })
+    data = await paginate(
+      octokit.graphql,
+      module.exports.findCommitsWithAssociatedPullRequestsQuery,
+      { ...variables, since: lastRelease.created_at },
+      dataPath
+    )
+    // GraphQL call is inclusive of commits from the specified dates.  This means the final
+    // commit from the last tag is included, so we remove this here.
+    commits = _.get(data, [...dataPath, 'nodes']).filter(
+      (commit) => commit.committedDate != lastRelease.created_at
+    )
+  } else {
+    log({ context, message: `Fetching all commits for reference ${ref}` })
 
-        data = await paginate(
-            context.octokit.graphql,
-            module.exports.findCommitsWithAssociatedPullRequestsQuery,
-            variables,
-            dataPath
-        )
-        commits = _.get(data, [...dataPath, 'nodes'])
-    }
+    data = await paginate(
+      octokit.graphql,
+      module.exports.findCommitsWithAssociatedPullRequestsQuery,
+      variables,
+      dataPath
+    )
+    commits = _.get(data, [...dataPath, 'nodes'])
+  }
 
-    const pullRequests = _.uniqBy(
-        _.flatten(commits.map((commit) => commit.associatedPullRequests.nodes)),
-        'number'
-    ).filter((pr) => pr.baseRepository.nameWithOwner === repoNameWithOwner)
+  const pullRequests = _.uniqBy(
+    _.flatten(commits.map((commit) => commit.associatedPullRequests.nodes)),
+    'number'
+  ).filter((pr) => pr.baseRepository.nameWithOwner === repoNameWithOwner)
 
-    return { commits, pullRequests }
+  return { commits, pullRequests }
 }
 
 /***/ }),
@@ -249,9 +250,9 @@ const sortReleases = (releases) => {
     }
 }
 
-module.exports.findReleases = async ({ ref, context, config }) => {
-    let releases = await context.octokit.paginate(
-        context.octokit.repos.listReleases.endpoint.merge(
+module.exports.findReleases = async ({ ref, context, octokit, config }) => {
+    let releases = await octokit.paginate(
+        octokit.repos.listReleases.endpoint.merge(
             context.repo({
                 per_page: 100,
             })
@@ -41062,14 +41063,14 @@ const { runnerIsActions } = __nccwpck_require__(918)
 const { validateSchema } = __nccwpck_require__(5171)
 const { findCommitsWithAssociatedPullRequests } = __nccwpck_require__(3916)
 const { sortPullRequests } = __nccwpck_require__(6445)
-const { findReleases, generateBody } = __nccwpck_require__(5715)
+const { findReleases, generateBody } = __nccwpck_require__(5715);
 
-function getConfig() {
+function getConfig({ context }) {
     var config = { template: "" }
     if (core.getInput('template') !== "")
         config.template = core.getInput('template')
     if (core.getInput('categories') !== "")
-        config.categories = parseCategories()
+        config.categories = parseCategories({ context })
     if (core.getInput('filter-by-commitish') !== "")
         config.filterByCommitish = core.getInput('filter-by-commitish')
     if (core.getInput('change-template') !== "")
@@ -41086,7 +41087,7 @@ function getConfig() {
     return validateSchema(config)
 }
 
-function parseCategories() {
+function parseCategories({ context }) {
     try {
         return JSON.parse(core.getInput('categories'))
     } catch (error) {
@@ -41102,8 +41103,8 @@ function parseCategories() {
 async function run() {
     try {
         const context = github.context
-        console.log(context.octokit)
-        const config = getConfig()
+        const octokit = github.getOctokit(GITHUB_TOKEN)
+        const config = getConfig({ context })
         if (config === null) return
         // GitHub Actions merge payloads slightly differ, in that their ref points
         // to the PR branch instead of refs/heads/master
@@ -41112,6 +41113,7 @@ async function run() {
         const { draftRelease, lastRelease } = await findReleases({
             ref,
             context,
+            octokit,
             config,
         })
         const {
@@ -41119,6 +41121,7 @@ async function run() {
             pullRequests: mergedPullRequests,
         } = await findCommitsWithAssociatedPullRequests({
             context,
+            octokit,
             ref,
             lastRelease,
             config,
@@ -41137,6 +41140,8 @@ async function run() {
         core.setFailed(error.message);
     }
 }
+
+const GITHUB_TOKEN = core.getInput('GITHUB_TOKEN')
 
 run();
 })();

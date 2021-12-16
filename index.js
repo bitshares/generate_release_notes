@@ -4,14 +4,14 @@ const { runnerIsActions } = require('./lib/utils')
 const { validateSchema } = require('./lib/schema')
 const { findCommitsWithAssociatedPullRequests } = require('./lib/commits')
 const { sortPullRequests } = require('./lib/sort-pull-requests')
-const { findReleases, generateBody } = require('./lib/releases')
+const { findReleases, generateBody } = require('./lib/releases');
 
-function getConfig() {
+function getConfig({ context }) {
     var config = { template: "" }
     if (core.getInput('template') !== "")
         config.template = core.getInput('template')
     if (core.getInput('categories') !== "")
-        config.categories = parseCategories()
+        config.categories = parseCategories({ context })
     if (core.getInput('filter-by-commitish') !== "")
         config.filterByCommitish = core.getInput('filter-by-commitish')
     if (core.getInput('change-template') !== "")
@@ -28,7 +28,7 @@ function getConfig() {
     return validateSchema(config)
 }
 
-function parseCategories() {
+function parseCategories({ context }) {
     try {
         return JSON.parse(core.getInput('categories'))
     } catch (error) {
@@ -44,8 +44,8 @@ function parseCategories() {
 async function run() {
     try {
         const context = github.context
-        console.log(context.octokit)
-        const config = getConfig()
+        const octokit = github.getOctokit(GITHUB_TOKEN)
+        const config = getConfig({ context })
         if (config === null) return
         // GitHub Actions merge payloads slightly differ, in that their ref points
         // to the PR branch instead of refs/heads/master
@@ -54,6 +54,7 @@ async function run() {
         const { draftRelease, lastRelease } = await findReleases({
             ref,
             context,
+            octokit,
             config,
         })
         const {
@@ -61,6 +62,7 @@ async function run() {
             pullRequests: mergedPullRequests,
         } = await findCommitsWithAssociatedPullRequests({
             context,
+            octokit,
             ref,
             lastRelease,
             config,
@@ -79,5 +81,7 @@ async function run() {
         core.setFailed(error.message);
     }
 }
+
+const GITHUB_TOKEN = core.getInput('GITHUB_TOKEN')
 
 run();
