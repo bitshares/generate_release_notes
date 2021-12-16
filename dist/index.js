@@ -166,9 +166,11 @@ module.exports = ({ context, message, error }) => {
     const prefix = repo ? `${repo.full_name}: ` : ''
     const logString = `${prefix}${message}`
     if (error) {
-        context.log.warn(error, logString)
+        // context.log.warn(error, logString)
+        console.warn(error, logString)
     } else {
-        context.log.info(logString)
+        // context.log.info(logString)
+        console.log(logString)
     }
 }
 
