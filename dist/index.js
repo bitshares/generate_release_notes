@@ -85,7 +85,7 @@ module.exports.findCommitsWithAssociatedPullRequests = async ({
   lastRelease,
   config,
 }) => {
-  const { owner, repo } = context.repo()
+  const { owner, repo } = context.repo
   const variables = {
     name: repo,
     owner,
